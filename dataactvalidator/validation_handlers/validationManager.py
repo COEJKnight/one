@@ -377,6 +377,7 @@ class ValidationManager:
         bucket_name = CONFIG_BROKER['aws_bucket']
         region_name = CONFIG_BROKER['aws_region']
         logger.info({'message':'Beginning run_cross_validation on submission_id: ' + str(submission_id),
+                            'message_type':'ValidatorInfo',
                             'submission_id':submission_id,
                             'job_id':job.job_id,
                             'action':'run_cross_validations',
@@ -426,6 +427,7 @@ class ValidationManager:
         mark_job_status(job_id, "finished")
         job_duration = "{:.2f}".format(datetime.now()-job_start)
         logger.info({'message':'Completed run_cross_validation on submission_id: ' + str(submission_id),
+                            'message_type':'ValidatorInfo',
                             'submission_id':submission_id,
                             'job_id':job.job_id,
                             'action':'run_cross_validations',
