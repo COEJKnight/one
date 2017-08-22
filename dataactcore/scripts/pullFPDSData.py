@@ -1233,7 +1233,7 @@ def parse_fpds_file(f, sess, sub_tier_list, naics_dict, filename=None):
     while batch <= batches:
         skiprows = 1 if batch == 0 else (batch * block_size)
         nrows = (((batch + 1) * block_size) - skiprows) if (batch < batches) else last_block_size
-        logger.info('loading rows %s to %s', skiprows + 1, nrows + skiprows)
+        logger.info('Starting load for rows %s to %s', skiprows + 1, nrows + skiprows)
 
         with zipfile.ZipFile(f) as zfile:
             with zfile.open(csv_file) as dat_file:
@@ -1241,7 +1241,7 @@ def parse_fpds_file(f, sess, sub_tier_list, naics_dict, filename=None):
 
                 cdata = format_fpds_data(data, sub_tier_list, naics_dict)
                 if cdata is not None:
-                    logger.info("loading {} rows".format(len(cdata.index)))
+                    logger.info("Loading {} rows into database".format(len(cdata.index)))
 
                     insert_dataframe(cdata, DetachedAwardProcurement.__table__.name, sess.connection())
 
