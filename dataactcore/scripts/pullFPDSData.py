@@ -1266,8 +1266,10 @@ def parse_fpds_file(f, sess, sub_tier_list, naics_dict, filename=None):
                                     for c in stmt.excluded
                                     if not c.primary_key
                                 }
-                                new_stmt = stmt.on_conflict_do_update(constraint='detached_award_proc_unique',
-                                                                      set_=update_dict)
+                                new_stmt = stmt.\
+                                    on_conflict_do_update(
+                                            constraint='detached_award_procurement_detached_award_proc_unique_key',
+                                            set_=update_dict)
                                 sess.execute(new_stmt)
                                 sess.commit()
 
