@@ -1165,6 +1165,7 @@ def parse_fpds_file(f, sess, sub_tier_list, naics_dict, filename=None):
     with zipfile.ZipFile(f) as zfile:
         with zfile.open(csv_file) as dat_file:
             nrows = len(dat_file.readlines())
+            logger.info("File contains %s rows", nrows)
 
     block_size = 10000
     batches = nrows // block_size
