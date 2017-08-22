@@ -1247,12 +1247,33 @@ def parse_fpds_file(f, sess, sub_tier_list, naics_dict, filename=None):
                 if cdata is not None:
                     logger.info("Loading {} rows into database".format(len(cdata.index)))
 
-                    insert_dataframe(cdata, DetachedAwardProcurement.__table__.name, sess.connection())
+                    try:
+                        insert_dataframe(cdata, DetachedAwardProcurement.__table__.name, sess.connection())
+                        sess.commit()
+                    except IntegrityError:
+                        sess.rollback()
+                        logger.info("Bulk load failed, individually loading %s rows into database", len(cdata.index))
+                        for index, row in cdata.iterrows():
+                            try:
+                                statement = insert(DetachedAwardProcurement).values(**row)
+                                sess.execute(statement)
+                                sess.commit()
+                            except IntegrityError:
+                                sess.rollback()
+                                stmt = insert(DetachedAwardProcurement).values(**row)
+                                update_dict = {
+                                    c.name: row[c.name]
+                                    for c in stmt.excluded
+                                    if not c.primary_key
+                                }
+                                new_stmt = stmt.on_conflict_do_update(constraint='detached_award_proc_unique',
+                                                                      set_=update_dict)
+                                sess.execute(new_stmt)
+                                sess.commit()
 
         added_rows += nrows
         batch += 1
-    logger.info("Finished loading file, committing data")
-    sess.commit()
+    logger.info("Finished loading file")
 
 
 def format_fpds_data(data, sub_tier_list, naics_data):
