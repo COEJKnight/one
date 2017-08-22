@@ -1154,11 +1154,11 @@ def get_delete_data(contract_type, now, sess, last_run):
 
 
 def parse_fpds_file(f, sess, sub_tier_list, naics_dict, filename=None):
-    logger.info("Starting file " + str(f))
-
     if not filename:
+        logger.info("Starting file " + str(f))
         csv_file = 'datafeeds\\' + os.path.splitext(os.path.basename(f))[0]
     else:
+        logger.info("Starting file " + str(filename))
         csv_file = 'datafeeds\\' + os.path.splitext(os.path.basename(filename))[0]
 
     nrows = 0
@@ -1246,6 +1246,7 @@ def parse_fpds_file(f, sess, sub_tier_list, naics_dict, filename=None):
 
         added_rows += nrows
         batch += 1
+    logger.info("Finished loading file, committing data")
     sess.commit()
 
 
@@ -2022,8 +2023,6 @@ def main():
                 if re.match(match_string, key.name):
                     # we only want up through 2015 for this data unless it’s a subfolder, then do all of them
                     if subfolder or int(key.name[:4]) <= max_year:
-                        # file_path = key.generate_url(expires_in=600)
-                        # parse_fpds_file(urllib.request.urlopen(file_path), sess, sub_tier_list, naics_dict)
                         # Create an in-memory bytes IO buffer
                         with io.BytesIO() as b:
                             # Read the file into it
