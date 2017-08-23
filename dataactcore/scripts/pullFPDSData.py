@@ -774,6 +774,8 @@ def calculate_remaining_fields(obj, sub_tier_list):
                 'transaction_number']
     unique_string = ""
     for item in key_list:
+        if len(unique_string) > 0:
+            unique_string += "_"
         try:
             if obj[item]:
                 unique_string += obj[item]
@@ -922,25 +924,35 @@ def process_delete_data(data, atom_type):
         except (KeyError, TypeError):
             unique_string += "-none-"
 
+        unique_string += "_"
+
         try:
             unique_string += extract_text(data['awardID']['referencedIDVID']['agencyID'])
         except (KeyError, TypeError):
             unique_string += "-none-"
+
+        unique_string += "_"
 
         try:
             unique_string += extract_text(data['awardID']['awardContractID']['PIID'])
         except (KeyError, TypeError):
             unique_string += "-none-"
 
+        unique_string += "_"
+
         try:
             unique_string += extract_text(data['awardID']['awardContractID']['modNumber'])
         except (KeyError, TypeError):
             unique_string += "-none-"
 
+        unique_string += "_"
+
         try:
             unique_string += extract_text(data['awardID']['referencedIDVID']['PIID'])
         except (KeyError, TypeError):
             unique_string += "-none-"
+
+        unique_string += "_"
 
         try:
             unique_string += extract_text(data['awardID']['awardContractID']['transactionNumber'])
@@ -952,20 +964,28 @@ def process_delete_data(data, atom_type):
         except (KeyError, TypeError):
             unique_string += "-none-"
 
+        unique_string += "_"
+
         try:
             unique_string += extract_text(data['contractID']['referencedIDVID']['agencyID'])
         except (KeyError, TypeError):
             unique_string += "-none-"
+
+        unique_string += "_"
 
         try:
             unique_string += extract_text(data['contractID']['IDVID']['PIID'])
         except (KeyError, TypeError):
             unique_string += "-none-"
 
+        unique_string += "_"
+
         try:
             unique_string += extract_text(data['contractID']['IDVID']['modNumber'])
         except (KeyError, TypeError):
             unique_string += "-none-"
+
+        unique_string += "_"
 
         try:
             unique_string += extract_text(data['contractID']['referencedIDVID']['PIID'])
@@ -973,7 +993,7 @@ def process_delete_data(data, atom_type):
             unique_string += "-none-"
 
         # transaction_number not in IDV feed, just set it to "-none-"
-        unique_string += "-none-"
+        unique_string += "_-none-"
 
     return unique_string
 
@@ -1920,6 +1940,8 @@ def create_unique_key(row):
     key_list = ['agencyid', 'idvagencyid', 'piid', 'modnumber', 'idvpiid', 'transactionnumber']
     unique_string = ""
     for item in key_list:
+        if len(unique_string) > 0:
+            unique_string += "_"
         if row[item] and str(row[item]) != 'nan':
             unique_string += str(row[item])
         else:
