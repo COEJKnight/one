@@ -1280,18 +1280,7 @@ def parse_fpds_file(f, sess, sub_tier_list, naics_dict, filename=None):
                                 sess.commit()
                             except IntegrityError:
                                 sess.rollback()
-                                stmt = insert(DetachedAwardProcurement).values(**row)
-                                update_dict = {
-                                    c.name: row[c.name]
-                                    for c in stmt.excluded
-                                    if not c.primary_key
-                                }
-                                new_stmt = stmt.\
-                                    on_conflict_do_update(
-                                            constraint='detached_award_procurement_detached_award_proc_unique_key',
-                                            set_=update_dict)
-                                sess.execute(new_stmt)
-                                sess.commit()
+                                logger.info("Found duplicate: %s, row not inserted", row['detached_award_proc_unique'])
 
         added_rows += nrows
         batch += 1
