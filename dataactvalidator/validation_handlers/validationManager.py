@@ -212,6 +212,10 @@ class ValidationManager:
         csv_schema = {row.name_short: row for row in fields}
 
         try:
+            extension = os.path.splitext(file_name)[1]
+            if not extension or extension not in ['.csv', '.txt']:
+                raise ResponseException("", StatusCode.CLIENT_ERROR, None, ValidationError.fileTypeError)
+
             # Count file rows: throws a File Level Error for non-UTF8 characters
             temp_file = open(reader.get_filename(region_name, bucket_name, file_name), encoding='utf-8')
             file_row_count = len(list(csv.reader(temp_file)))
@@ -223,7 +227,7 @@ class ValidationManager:
 
             # Pull file and return info on whether it's using short or long col headers
             reader.open_file(region_name, bucket_name, file_name, fields, bucket_name, error_file_name,
-                             self.long_to_short_dict)
+                             self.long_to_short_dict, is_local=self.isLocal)
 
             # list to keep track of rows that fail validations
             error_rows = []
