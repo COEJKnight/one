@@ -1030,14 +1030,21 @@ def process_and_add(data, contract_type, sess, sub_tier_list):
         sess.execute(insert_statement)
 
 
-def get_data(contract_type, award_type, now, sess, sub_tier_list, last_run=None):
+#def get_data(contract_type, award_type, now, sess, sub_tier_list, last_run=None):
+def get_data(contract_type, award_type, now, sess, sub_tier_list, last_run=None, start=None, end=None):
+
     """ get the data from the atom feed based on contract/award type and the last time the script was run """
     data = []
+    signed_start = '2015/10/01' if start == None else start
+    signed_end = now - datetime.timedelta(days=1) if end == None else end
+
     yesterday = now - datetime.timedelta(days=1)
     # if a date that the script was last successfully run is not provided, get all data
     if not last_run:
         # params = 'SIGNED_DATE:[2015/10/01,'+ yesterday.strftime('%Y/%m/%d') + '] '
-        params = 'SIGNED_DATE:[2016/10/01,' + yesterday.strftime('%Y/%m/%d') + '] '
+        # params = 'SIGNED_DATE:[2016/10/01,' + yesterday.strftime('%Y/%m/%d') + '] '
+        params = 'SIGNED_DATE:['+signed_start+',' + signed_end + '] '
+        print(params)
         # params = 'SIGNED_DATE:[2017/07/01,' + yesterday.strftime('%Y/%m/%d') + '] '
     # if a date that the script was last successfully run is provided, get data since that date
     else:
@@ -1180,16 +1187,17 @@ def get_delete_data(contract_type, now, sess, last_run):
 def parse_fpds_file(f, sess, sub_tier_list, naics_dict, filename=None):
     if not filename:
         logger.info("Starting file " + str(f))
-        csv_file = 'datafeeds\\' + os.path.splitext(os.path.basename(f))[0]
+        csv_file = str(f)
     else:
         logger.info("Starting file " + str(filename))
-        csv_file = 'datafeeds\\' + os.path.splitext(os.path.basename(filename))[0]
+        csv_file = str(filename)
 
     nrows = 0
-    with zipfile.ZipFile(f) as zfile:
-        with zfile.open(csv_file) as dat_file:
-            nrows = len(dat_file.readlines())
-            logger.info("File contains %s rows", nrows)
+    #with zipfile.ZipFile(f) as zfile:
+    #with zfile.open(csv_file) as dat_file:
+    with open(csv_file) as dat_file:
+        nrows = len(dat_file.readlines())
+        logger.info("File contains %s rows", nrows)
 
     block_size = 10000
     batches = nrows // block_size
@@ -1259,28 +1267,29 @@ def parse_fpds_file(f, sess, sub_tier_list, naics_dict, filename=None):
         nrows = (((batch + 1) * block_size) - skiprows) if (batch < batches) else last_block_size
         logger.info('Starting load for rows %s to %s', skiprows + 1, nrows + skiprows)
 
-        with zipfile.ZipFile(f) as zfile:
-            with zfile.open(csv_file) as dat_file:
-                data = pd.read_csv(dat_file, dtype=str, header=None, skiprows=skiprows, nrows=nrows, names=all_cols)
+        #with zipfile.ZipFile(f) as zfile:
+            #with zfile.open(csv_file) as dat_file:
+        with open(csv_file) as dat_file:
+            data = pd.read_csv(dat_file, dtype=str, header=None, skiprows=skiprows, nrows=nrows, names=all_cols)
 
-                cdata = format_fpds_data(data, sub_tier_list, naics_dict)
-                if cdata is not None:
-                    logger.info("Loading {} rows into database".format(len(cdata.index)))
+            cdata = format_fpds_data(data, sub_tier_list, naics_dict)
+            if cdata is not None:
+                logger.info("Loading {} rows into database".format(len(cdata.index)))
 
-                    try:
-                        insert_dataframe(cdata, DetachedAwardProcurement.__table__.name, sess.connection())
-                        sess.commit()
-                    except IntegrityError:
-                        sess.rollback()
-                        logger.info("Bulk load failed, individually loading %s rows into database", len(cdata.index))
-                        for index, row in cdata.iterrows():
-                            try:
-                                statement = insert(DetachedAwardProcurement).values(**row)
-                                sess.execute(statement)
-                                sess.commit()
-                            except IntegrityError:
-                                sess.rollback()
-                                logger.info("Found duplicate: %s, row not inserted", row['detached_award_proc_unique'])
+                try:
+                    insert_dataframe(cdata, DetachedAwardProcurement.__table__.name, sess.connection())
+                    sess.commit()
+                except IntegrityError:
+                    sess.rollback()
+                    logger.info("Bulk load failed, individually loading %s rows into database", len(cdata.index))
+                    for index, row in cdata.iterrows():
+                        try:
+                            statement = insert(DetachedAwardProcurement).values(**row)
+                            sess.execute(statement)
+                            sess.commit()
+                        except IntegrityError:
+                            sess.rollback()
+                            logger.info("Found duplicate: %s, row not inserted", row['detached_award_proc_unique'])
 
         added_rows += nrows
         batch += 1
@@ -1951,6 +1960,11 @@ def main():
     parser.add_argument('-o', '--other',
                         help='Used in conjunction with -a to indicate all feeds other than delivery order',
                         action='store_true')
+    parser.add_argument("-s", "--start", type=str, default=None, help='set signed_date start')
+    parser.add_argument("-e", "--end", type=str, default=None, help='set signed_date end')
+    parser.add_argument("-i", "--idv", help='set all idv data')
+    parser.add_argument("-t", "--type", type=str, default=None, help='get award data specifying award_type')
+
     parser.add_argument('-f', '--files', help='Load historical data from files', action='store_true')
     parser.add_argument('-sf', '--subfolder',
                         help='Used in conjunction with -f to indicate which Subfolder to load files from',
@@ -1959,6 +1973,7 @@ def main():
 
     award_types_award = ["BPA Call", "Definitive Contract", "Purchase Order", "Delivery Order"]
     award_types_idv = ["GWAC", "BOA", "BPA", "FSS", "IDC"]
+    print(args)
 
     sub_tiers = sess.query(SubTierAgency).all()
     sub_tier_list = {}
@@ -1967,11 +1982,11 @@ def main():
         sub_tier_list[sub_tier.sub_tier_agency_code] = sub_tier
 
     if args.all:
-        if (not args.delivery and not args.other) or (args.delivery and args.other):
-            logger.error("When using the -a flag, please include either -d or -o "
-                         "(but not both) to indicate which feeds to read in")
-            raise ValueError("When using the -a flag, please include either -d or -o "
-                             "(but not both) to indicate which feeds to read in")
+        #if (not args.delivery and not args.other) or (args.delivery and args.other):
+        #    logger.error("When using the -a flag, please include either -d or -o "
+        #                 "(but not both) to indicate which feeds to read in")
+        #    raise ValueError("When using the -a flag, please include either -d or -o "
+        #                     "(but not both) to indicate which feeds to read in")
         logger.info("Starting at: " + str(datetime.datetime.now()))
 
         if args.other:
@@ -1983,6 +1998,14 @@ def main():
 
         elif args.delivery:
             get_data("award", "Delivery Order", now, sess, sub_tier_list)
+        elif args.idv:
+            for award_type in award_types_idv:
+                get_data("IDV", award_type, now, sess, sub_tier_list)
+
+        elif args.type:
+            print(args.type)
+            get_data("award", args.type, now, sess, sub_tier_list, start=args.start, end=args.end)
+
 
         last_update = sess.query(FPDSUpdate).one_or_none()
 
@@ -2090,7 +2113,7 @@ def main():
                 base_path = os.path.join(base_path, subfolder)
             file_list = [f for f in os.listdir(base_path)]
             for file in file_list:
-                if re.match('^\d{4}_All_Contracts_Full_\d{8}.csv.zip', file):
+                if re.match('^\d{4}_All_Contracts_Full_\d{8}.csv', file):
                     # we only want up through 2015 for this data
                     if int(file[:4]) <= max_year:
                         parse_fpds_file(open(os.path.join(base_path, file)).name, sess, sub_tier_list, naics_dict)
