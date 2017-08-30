@@ -1962,7 +1962,7 @@ def main():
                         action='store_true')
     parser.add_argument("-s", "--start", type=str, default=None, help='set signed_date start')
     parser.add_argument("-e", "--end", type=str, default=None, help='set signed_date end')
-    parser.add_argument("-i", "--idv", help='set all idv data')
+    parser.add_argument("-i", "--idv", help='set all idv data', action='store_true')
     parser.add_argument("-t", "--type", type=str, default=None, help='get award data specifying award_type')
 
     parser.add_argument('-f', '--files', help='Load historical data from files', action='store_true')
