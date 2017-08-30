@@ -2000,7 +2000,7 @@ def main():
             get_data("award", "Delivery Order", now, sess, sub_tier_list)
         elif args.idv:
             for award_type in award_types_idv:
-                get_data("IDV", award_type, now, sess, sub_tier_list)
+                get_data("IDV", award_type, now, sess, sub_tier_list, start=args.start, end=args.end)
 
         elif args.type:
             print(args.type)
