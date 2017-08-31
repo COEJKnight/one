@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 PROCUREMENT = 'procurement_service'
 GRANT = 'grant_service'
 SERVICE_MODEL = {PROCUREMENT: FSRSProcurement, GRANT: FSRSGrant}
+batch = {'number_returned': None, 'total_records': None}
 
 
 def service_config(service_type):
@@ -130,7 +131,7 @@ _grantAddrs = ('principle_place', 'awardee_address')
 def flatten_soap_dict(simple_fields, address_fields, comma_field, soap_dict):
     """For all four FSRS models, we need to copy over values, flatten address
     data, flatten topPaid, convert comma fields"""
-    logger.debug(soap_dict)
+    #logger.debug(soap_dict)
     model_attrs = {}
     for field in simple_fields:
         model_attrs[field] = soap_dict.get(field)
@@ -173,7 +174,13 @@ def retrieve_batch(service_type, min_id):
     """The FSRS web service returns records in batches (500 at a time).
     Retrieve one such batch, converting each result (and sub-results) into
     dicts"""
-    for report in new_client(service_type).service.getData(id=min_id)['reports']:
+
+    response = new_client(service_type).service.getData(id=min_id)
+    batch['number_returned'] = response['number_returned']
+    batch['total_records'] = response['total_records']
+
+    logger.info("Received next %s awards.",str(batch['number_returned']))
+    for report in response['reports']:
         as_dict = soap_to_dict(report)
         if service_type == PROCUREMENT:
             yield to_prime_contract(as_dict)
@@ -188,10 +195,14 @@ def fetch_and_replace_batch(sess, service_type, min_id=None):
     if min_id is None:
         min_id = model.next_id(sess)
 
+    logger.info("Requesting batch of %s awards, starting with id: %s.", service_type, str(min_id))
     awards = list(retrieve_batch(service_type, min_id))
     ids = [a.internal_id for a in awards]
     sess.query(model).filter(model.internal_id.in_(ids)).delete(synchronize_session=False)
     sess.add_all(awards)
     sess.commit()
+    logger.info("Finished loading %s records. %s of %s total %s records have been loaded.",
+        str(batch['number_returned']), str(sess.query(model).count()),
+        str(batch['total_records']), service_type)
 
     return awards
