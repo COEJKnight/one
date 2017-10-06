@@ -26,11 +26,13 @@ errors = {}
 progress = []
 
 
-def parse_fabs_file(f, file_name):
+def parse_fabs_file(f, file_name, d2_file):
     logger.info("starting file " + str(f.name))
     df1 = pd.read_csv(f.name, dtype=str, encoding="ISO-8859-1")
-    df1['afa_generated_unique'] = df1.apply(lambda x: generate_unique_string(x), axis=1)
-    df1.sort_values("uri", axis=0, ascending=True, inplace=True, kind='quicksort', na_position='last')
+    if d2_file:
+        df1['afa_generated_unique'] = df1.apply(lambda x: generate_unique_string_d2(x), axis=1)
+    else:
+        df1['afa_generated_unique'] = df1.apply(lambda x: generate_unique_string_d1(x), axis=1)
     df1['file_name'] = file_name
     return df1.set_index('afa_generated_unique')
 
@@ -49,10 +51,11 @@ def main():
     length = 0
     pos = 0
     for file in file_list:
-        raw.append(parse_fabs_file(open(os.path.join(base_path, file)), file))
+        raw.append(parse_fabs_file(open(os.path.join(base_path, file)), file, sys.argv[2] == 'd2'))
         logger.info(file + " has number of rows: " + str(len(raw[pos].index)))
         if length == 0:
             length = len(raw[pos].index)
+            pos += 1
         elif len(raw[pos].index) != length:
             logger.info(file + " has incorrect number of rows: " + str(len(raw[pos].index)))
             return
@@ -74,7 +77,10 @@ def main():
         else:
             index_invalid.append(index)
     print('Identifiers not present in all files')
-    print(index_invalid)
+    print('Invalid rows: ' + str(len(index_invalid)))
+    print('Valid rows:   ' + str(len(index_valid)))
+    for index in index_invalid:
+        print(str(index_list[index]) +" == "+str(index))
 
     # Get unique and shared columns
     shared_columns = []
@@ -121,11 +127,13 @@ def main():
                             errors[msg] = 1
                         else:
                             errors[msg] += 1
-
+    total = 0
     for error in errors:
         # return
         print(error + " occured " + str(errors[error]) + " times")
-        val = 0
+        total += errors[error]
+        
+    print("Types of errors found:" + len(errors))
 
     logger.info("Comparison is complete")
 
@@ -138,7 +146,7 @@ def clean_value(val, col, fn):
     #     return val.strip('0').strip('.')
     return val.strip().replace('-', '').strip('0').strip('.').strip('0').strip().lower()
 
-def generate_unique_string(row):
+def generate_unique_string_d2(row):
 
     # create unique string from the awarding_sub_tier_agency_c, award_modification_amendme, fain, and uri
     astac = row['awardingsubtieragencycode'] if row['awardingsubtieragencycode'] is not None else '-none-'
@@ -154,7 +162,28 @@ def generate_unique_string(row):
         fain = "-none-"
     if type(uri) == float and math.isnan(uri):
         uri = "-none-"
-    return ama + "___" + astac + "___" + fain + "___" + uri
+    return ama.strip() + "_" + astac.strip() + "_" + fain.strip() + "_" + uri.strip()
+
+def generate_unique_string_d1(row):
+
+    # create unique string from the awarding_sub_tier_agency_c, award_modification_amendme, fain, and uri
+    # astac = row['agencyid'] if row['agencyid'] is not None else '-none-'
+    astac = ""
+    ama = row['referenced_idv_agency_identifier'] if row['referenced_idv_agency_identifier'] is not None else '-none-'
+    fain = row['piid'] if row['piid'] is not None else '-none-'
+    uri = row['awardmodificationamendmentnumber'] if row['awardmodificationamendmentnumber'] is not None else '-none-'
+    parent = row['parentawardid'] if row['parentawardid'] is not None else '-none-'
+    trans = str(row['transaction_number']) if row['transaction_number'] is not None else '-none-'
+
+    if type(astac) == float and math.isnan(astac):
+        astac = "-none-"
+    if type(ama) == float and math.isnan(ama):
+        ama = "-none-"
+    if type(fain) == float and math.isnan(fain):
+        fain = "-none-"
+    if type(uri) == float and math.isnan(uri):
+        uri = "-none-"
+    return str(ama).strip() + "_" + astac.strip() + "_" + fain.strip() + "_" + uri.strip() + "_" + str(parent).strip() + "_" + trans.strip()
 
 
 if __name__ == '__main__':
