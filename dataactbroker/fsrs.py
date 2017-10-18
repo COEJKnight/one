@@ -130,7 +130,7 @@ _grantAddrs = ('principle_place', 'awardee_address')
 def flatten_soap_dict(simple_fields, address_fields, comma_field, soap_dict):
     """For all four FSRS models, we need to copy over values, flatten address
     data, flatten topPaid, convert comma fields"""
-    logger.debug(soap_dict)
+    #logger.debug(soap_dict)
     model_attrs = {}
     for field in simple_fields:
         model_attrs[field] = soap_dict.get(field)
