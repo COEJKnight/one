@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 # sess: Passing session into the function for modifying db
 # type: will be either 'awarding' or 'funding' to determine which agency type we are checking
 def update_table(sess, type):
-    logger.info('updating ' + type)
-    invalid = sess.execute("select count(*) from detached_award_procurement where " + type + "_agency_code='999'")
+    logger.info('Updating ' + type)
+    invalid = sess.execute("SELECT COUNT(*) FROM detached_award_procurement WHERE " + type + "_agency_code='999'")
     invalid_count = invalid.fetchone()[0]
     logger.info("{} invalid {} rows found".format(invalid_count, type))
     # The name of the column depends on the type because of limited string length
@@ -21,24 +21,24 @@ def update_table(sess, type):
     updated_at = datetime.datetime.utcnow().strftime('%Y-%m-%d %I:%M:%S.%f')
     # updates table based off the parent of the sub_tier_agency code
     sess.execute(
+        "WITH agency AS (SELECT sub.sub_tier_agency_code, CASE WHEN sub.is_frec " +
+        "THEN (SELECT agency_name FROM frec WHERE frec.frec_id = sub.frec_id) " +
+        "ELSE (SELECT agency_name FROM cgac where cgac.cgac_id = sub.cgac_id) END agency_name, " +
+        "CASE WHEN sub.is_frec " +
+        "THEN (SELECT frec_code FROM frec WHERE frec.frec_id = sub.frec_id) " +
+        "ELSE (SELECT cgac_code FROM cgac where cgac.cgac_id = sub.cgac_id) END agency_code " +
+        "FROM sub_tier_agency sub " +
+        "INNER JOIN cgac ON cgac.cgac_id = sub.cgac_id " +
+        "INNER JOIN frec ON frec.frec_id = sub.frec_id) " +
         "UPDATE detached_award_procurement set updated_at = '" + updated_at + "', "
         + type + "_agency_code = agency.agency_code, " +
-        type + "_agency_name = agency.agency_name from ( " +
-        "SELECT sub.sub_tier_agency_code, sub.cgac_id, sub.frec_id, sub.is_frec, CASE WHEN sub.is_frec " +
-        "THEN (SELECT agency_name from frec WHERE frec.frec_id = sub.frec_id) " +
-        "ELSE (SELECT agency_name from cgac where cgac.cgac_id = sub.cgac_id) end agency_name, " +
-        "CASE WHEN sub.is_frec " +
-        "THEN (SELECT frec_code from frec WHERE frec.frec_id = sub.frec_id) " +
-        "ELSE (SELECT cgac_code from cgac where cgac.cgac_id = sub.cgac_id) end agency_code " +
-        "from sub_tier_agency sub " +
-        "INNER JOIN cgac ON cgac.cgac_id = sub.cgac_id " +
-        "INNER JOIN frec ON frec.frec_id = sub.frec_id ) agency " +
-        "where detached_award_procurement." + type + "_agency_code = '999' " +
-        "and detached_award_procurement." + type + "_sub_tier_agency_c" + suffix +
+        type + "_agency_name = agency.agency_name FROM agency " +
+        "WHERE detached_award_procurement." + type + "_agency_code = '999' " +
+        "AND detached_award_procurement." + type + "_sub_tier_agency_c" + suffix +
         " = agency.sub_tier_agency_code "
     )
     sess.commit()
-    invalid = sess.execute("select count(*) from detached_award_procurement where " + type + "_agency_code='999'")
+    invalid = sess.execute("SELECT COUNT(*) FROM detached_award_procurement WHERE " + type + "_agency_code='999'")
     print_report(invalid_count, invalid.fetchone()[0], type)
 
 
