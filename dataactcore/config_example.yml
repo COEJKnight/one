@@ -73,11 +73,7 @@ broker:
     parent_group: sample
 
 services:
-    # Set to true to turn on tracing rest errors.
-    rest_trace: false #deprecated
-
     # Set to true to turn on server debugging.
-    server_debug: false #deprecated
     debug: false
 
     # URL/IP address that hosts the broker API
@@ -174,8 +170,6 @@ logging:
             - broker_api_port
             - validator_port
             - protocol
-            - rest_trace
-            - server_debug
         db:
             - base_db_name
             - scheme
