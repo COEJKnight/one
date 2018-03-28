@@ -194,6 +194,7 @@ def fetch_and_replace_batch(sess, service_type, min_id=None):
     if min_id is None:
         min_id = model.next_id(sess)
         return_single_id = False
+        logger.debug(str(service_type) + ": Running with min_id of " + str(min_id))
 
     awards = list(retrieve_batch(service_type, min_id, return_single_id))
     ids = [a.internal_id for a in awards]

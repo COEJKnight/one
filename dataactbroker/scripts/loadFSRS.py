@@ -36,12 +36,10 @@ if __name__ == '__main__':
         else:
             # Regular FSRS data load, starts where last load left off
             if len(sys.argv) <= 1:
-                awards = ['Starting']
-                while len(awards) > 0:
-                    procs = fetch_and_replace_batch(sess, PROCUREMENT)
-                    grants = fetch_and_replace_batch(sess, GRANT)
-                    awards = procs + grants
-                    log_fsrs_counts(awards)
+                procs = fetch_and_replace_batch(sess, PROCUREMENT)
+                grants = fetch_and_replace_batch(sess, GRANT)
+                awards = procs + grants
+                log_fsrs_counts(awards)
 
             elif args.procurement and args.ids:
                 for procurement_id in args.ids:
