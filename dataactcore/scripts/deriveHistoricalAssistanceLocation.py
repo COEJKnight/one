@@ -7,9 +7,6 @@ from dataactcore.logging import configure_logging
 from dataactcore.models.domainModels import CountryCode, States, CountyCode, CityCode, Zips
 from dataactcore.models.stagingModels import PublishedAwardFinancialAssistance, DetachedAwardProcurement
 
-from dataactcore.models.jobModels import Submission  # noqa
-from dataactcore.models.userModel import User  # noqa
-
 from dataactvalidator.health_check import create_app
 
 logger = logging.getLogger(__name__)

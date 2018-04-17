@@ -2,8 +2,6 @@ import logging
 import datetime
 from dataactcore.logging import configure_logging
 from dataactcore.interfaces.db import GlobalDB
-from dataactcore.models.jobModels import Submission # noqa
-from dataactcore.models.userModel import User # noqa
 from dataactcore.models.stagingModels import PublishedAwardFinancialAssistance
 from dataactcore.models.domainModels import CFDAProgram
 

@@ -34,8 +34,6 @@ from dataactcore.models.stagingModels import DetachedAwardProcurement
 from dataactcore.models.jobModels import FPDSUpdate
 
 from dataactcore.utils.business_categories import get_business_categories
-from dataactcore.models.jobModels import Submission  # noqa
-from dataactcore.models.userModel import User  # noqa
 
 from dataactvalidator.health_check import create_app
 from dataactvalidator.scripts.loaderUtils import clean_data, insert_dataframe

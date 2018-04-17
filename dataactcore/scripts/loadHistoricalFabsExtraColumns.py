@@ -10,8 +10,6 @@ import pandas as pd
 from dataactcore.logging import configure_logging
 from dataactcore.config import CONFIG_BROKER
 from dataactcore.interfaces.db import GlobalDB
-from dataactcore.models.jobModels import Submission # noqa
-from dataactcore.models.userModel import User # noqa
 from dataactcore.models.stagingModels import PublishedAwardFinancialAssistance
 
 from dataactvalidator.health_check import create_app

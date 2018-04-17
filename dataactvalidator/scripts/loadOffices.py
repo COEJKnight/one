@@ -8,8 +8,6 @@ import boto
 from dataactcore.config import CONFIG_BROKER
 from dataactcore.interfaces.db import GlobalDB
 from dataactcore.logging import configure_logging
-from dataactcore.models.jobModels import Submission # noqa
-from dataactcore.models.userModel import User # noqa
 from dataactcore.models.stagingModels import FPDSContractingOffice
 from dataactvalidator.health_check import create_app
 from dataactvalidator.scripts.loaderUtils import clean_data
